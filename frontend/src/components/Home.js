@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { jsPDF } from 'jspdf'; // Import jsPDF for PDF generation
+import { jsPDF } from 'jspdf';
 import { createReport, getAllReport, updateReport, deleteReport } from '../actions/reportActions';
 
 const Home = () => {
@@ -15,6 +15,11 @@ const Home = () => {
     const [allReport, setAllReport] = useState([]);
     const [showData, setShowData] = useState(false);
     const [selectedData, setSelectedData] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        fetchReport(); 
+    }, []);
 
     const fetchReport = async () => {
         try {
@@ -57,8 +62,7 @@ const Home = () => {
                 eventDescription: '',
                 eventImage: ''
             });
-            // Optionally, refresh the list after submission
-            //fetchReport();
+            fetchReport(); 
         }).catch(err => {
             console.log(err);
         });
@@ -110,44 +114,59 @@ const Home = () => {
     };
 
     const createPDF = (data) => {
+        if (!data || !data.eventName) {
+            console.error('Invalid data provided to createPDF');
+            return;
+        }
+    
         const doc = new jsPDF();
-        
-        const eventNameFontSize = 20;
-        const detailFontSize = 16;
-        const verticalOffset = 40;
-        const pageWidth = doc.internal.pageSize.width;
-
+    
+        // Background color
+        doc.setFillColor(255, 255, 255); // White background
+        doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
+    
+        // Event Name
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(eventNameFontSize);
+        doc.setFontSize(30); // Increased font size
+        doc.setTextColor(0, 51, 102); // Dark blue color
         const eventNameWidth = doc.getTextWidth(data.eventName);
-        const eventNameX = (pageWidth - eventNameWidth) / 2;
-        doc.text(data.eventName, eventNameX, verticalOffset);
-
-        const detailOffset = verticalOffset + 30;
+        const eventNameX = (doc.internal.pageSize.width - eventNameWidth) / 2;
+        doc.text(data.eventName, eventNameX, 40); 
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(detailFontSize);
-        doc.text(`On ${data.eventDate},`, 14, detailOffset);
-
+        doc.setFontSize(20); // Increased font size
+        doc.setTextColor(0, 102, 204); // Blue color
+        doc.text(`On ${data.eventDate},`, 10, 60); 
+    
         const descriptiveText = `The '${data.eventName}' took place at '${data.eventVenue}'. This event was designed to '${data.eventDescription}'. The venue provided a fitting backdrop, enhancing the experience for all participants. The event was successfully executed, making it a memorable occasion for everyone involved.`;
-
-        const descriptiveTextOffset = detailOffset + 20;
-        doc.text(descriptiveText, 14, descriptiveTextOffset, { maxWidth: 180 });
-
+        doc.setFontSize(18); // Increased font size
+        doc.setTextColor(0, 0, 0); // Black color
+        doc.text(descriptiveText, 10, 80, { maxWidth: 180, lineHeightFactor: 1.5 }); // Increased line height for more space
+    
         if (data.eventImage) {
-            const base64StringOffset = descriptiveTextOffset + 40;
-            doc.setFontSize(10);
-            doc.text(`Event Image URL: ${data.eventImage}`, 14, base64StringOffset, { maxWidth: 180 });
+            doc.setFontSize(16); // Increased font size
+            doc.setTextColor(0, 0, 0); // Black color
+            doc.text(`Event Image URL: ${data.eventImage}`, 10, 140, { maxWidth: 180, lineHeightFactor: 1.5 }); // Increased line height for more space
         }
-
+    
         doc.save(`${data.eventName}_report.pdf`);
+    };    
+
+    const handleCreateReport = () => {
+        if (!selectedData) {
+            alert('No data selected to create PDF');
+            return;
+        }
+        setLoading(true); 
+        createPDF(selectedData);
+        setLoading(false); 
     };
 
     return (
         <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', padding: '20px' }}>
             <h1 style={{ textAlign: 'center', color: '#343a40' }}>Event Report Generator</h1>
 
-            <div style={{ padding: '30px', display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
+            <div style={{ padding: '30px', display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center', transition: 'all 0.3s ease' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 300px', marginRight: '10px' }}>
                     <label>Name</label>
                     <input 
@@ -156,7 +175,7 @@ const Home = () => {
                         value={data.eventName} 
                         placeholder='Event Name' 
                         onChange={handleChange} 
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', transition: 'all 0.3s ease' }}
                     />
                 </div>
 
@@ -166,9 +185,9 @@ const Home = () => {
                         type="text" 
                         name="eventDate" 
                         value={data.eventDate} 
-                        placeholder='YYYY-MM-DD' 
+                        placeholder='DD-MM-YYYY' 
                         onChange={handleChange} 
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', transition: 'all 0.3s ease' }}
                     />
                 </div>
 
@@ -180,7 +199,7 @@ const Home = () => {
                         value={data.eventVenue} 
                         placeholder='Event Venue' 
                         onChange={handleChange} 
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', transition: 'all 0.3s ease' }}
                     />
                 </div>
 
@@ -191,6 +210,7 @@ const Home = () => {
                         value={data.eventDescription} 
                         placeholder='Brief Description of the Event' 
                         onChange={handleChange}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', transition: 'all 0.3s ease' }}
                     />
                 </div>
 
@@ -202,65 +222,62 @@ const Home = () => {
                         value={data.eventImage} 
                         placeholder='Image URL' 
                         onChange={handleChange} 
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ced4da', transition: 'all 0.3s ease' }}
                     />
                 </div>
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <button 
-                    style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px' }} 
+                    style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
                     onClick={handleSubmit}
                 >
                     Submit
                 </button>
                 <button 
-                    style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px' }} 
+                    style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
                     onClick={fetchReport}
                 >
                     Fetch
                 </button>
                 <button 
-                    style={{ backgroundColor: '#fd7e14', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px' }} 
+                    style={{ backgroundColor: '#fd7e14', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
                     onClick={handleUpdate}
                 >
                     Update
                 </button>
+                <button 
+                    style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
+                    onClick={() => handleDelete(data.id)}
+                >
+                    Delete
+                </button>
+                <button 
+                    style={{ backgroundColor: '#17a2b8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
+                    onClick={handleCreateReport}
+                >
+                    {loading ? 'Creating PDF...' : 'Create Report'}
+                </button>
             </div>
 
             {showData && (
-                <div style={{ padding: '10px' }}>
-                    {allReport.map((element, i) => (
-                        <div 
-                            className='border border-primary col-md-12 my-2' 
-                            key={i} 
-                            style={{ padding: '20px', borderRadius: '8px', backgroundColor: '#ffffff', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', marginBottom: '20px' }}
-                        >
-                            <div onClick={() => handleValue(element)}>
-                                <h2 style={{ color: '#343a40' }}>{element.eventName}</h2>
-                                <p>
-                                    <b>Venue:</b> {element.eventVenue} <span style={{ marginRight: '20px' }}></span>
-                                    <b>Date:</b> {element.eventDate} <span style={{ marginRight: '20px' }}></span>
-                                    <b>Description:</b> {element.eventDescription} <span style={{ marginRight: '20px' }}></span>
-                                    <b>Image URL:</b> {element.eventImage}
-                                </p>
-                                <div style={{ textAlign: 'center' }}>
-                                    <button 
-                                        style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px' }} 
-                                        onClick={() => handleDelete(element._id)}
-                                    >
-                                        Delete
-                                    </button>
-                                    <button 
-                                        style={{ backgroundColor: '#20c997', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px' }} 
-                                        onClick={() => createPDF(selectedData)}
-                                    >
-                                        Create Report
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div style={{ marginTop: '20px' }}>
+                    <h2 style={{ textAlign: 'center', color: '#343a40' }}>Reports List</h2>
+                    <ul style={{ listStyleType: 'none', padding: 0 }}>
+                        {allReport.map(report => (
+                            <li 
+                                key={report._id} 
+                                style={{ padding: '10px', borderBottom: '1px solid #ced4da', transition: 'background-color 0.3s ease', cursor: 'pointer', backgroundColor: selectedData && selectedData._id === report._id ? '#e9ecef' : '#ffffff' }} 
+                                onClick={() => handleValue(report)}
+                            >
+                                <h3>{report.eventName}</h3>
+                                <p>Date: {report.eventDate}</p>
+                                <p>Venue: {report.eventVenue}</p>
+                                <p>Description: {report.eventDescription}</p>
+                                <p>Image URL: {report.eventImage}</p>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>
