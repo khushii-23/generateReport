@@ -351,7 +351,6 @@ const Home = () => {
                                         }}
                                     >
                                         Delete
-                                        
                                     </button>
                                 </div>
                             </li>
