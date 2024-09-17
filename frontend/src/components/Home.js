@@ -70,6 +70,7 @@ const Home = () => {
             eventDescription: '',
             eventImage: ''
         });
+        console.log(body);
         alert('Data Submitted Successfully');
         // Clear the existing reports
         setAllReport([]);
