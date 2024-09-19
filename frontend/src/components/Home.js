@@ -19,6 +19,7 @@ const Home = () => {
     const [showData, setShowData] = useState(false);
     const [selectedData, setSelectedData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isFetched, setIsFetched] = useState(false);  // New state to track fetch status
 
     useEffect(() => {
         //fetchReport(); 
@@ -30,6 +31,7 @@ const Home = () => {
             if (res && res.data) {
                 setAllReport(res.data);
                 setShowData(true);
+                setIsFetched(true);  // Mark as fetched
                 console.log("Data fetched:", res.data);
             } else {
                 console.log("Unexpected response structure:", res);
@@ -49,38 +51,38 @@ const Home = () => {
     };
 
     const handleSubmit = () => {
-    if (!data.eventName || !data.eventDate || !data.eventVenue || !data.eventDescription || !data.eventImage) {
-        alert('Please fill in all fields');
-        return;
-    }
-    const body = {
-        eventName: data.eventName,
-        eventDate: data.eventDate,
-        eventVenue: data.eventVenue,
-        eventDescription: data.eventDescription,
-        eventImage: data.eventImage
-    };
+        if (!data.eventName || !data.eventDate || !data.eventVenue || !data.eventDescription || !data.eventImage) {
+            alert('Please fill in all fields');
+            return;
+        }
+        const body = {
+            eventName: data.eventName,
+            eventDate: data.eventDate,
+            eventVenue: data.eventVenue,
+            eventDescription: data.eventDescription,
+            eventImage: data.eventImage
+        };
 
-    createReport(body).then(res => {
-        console.log('response', res);
-        setData({
-            eventName: '',
-            eventDate: '',
-            eventVenue: '',
-            eventDescription: '',
-            eventImage: ''
+        createReport(body).then(res => {
+            console.log('response', res);
+            setData({
+                eventName: '',
+                eventDate: '',
+                eventVenue: '',
+                eventDescription: '',
+                eventImage: ''
+            });
+            console.log(body);
+            alert('Data Submitted Successfully');
+            // Clear the existing reports
+            setAllReport([]);
+            setIsFetched(false);  // Reset fetch status
+            // Optionally re-fetch the reports after clearing
+            // fetchReport();
+        }).catch(err => {
+            console.log(err);
         });
-        console.log(body);
-        alert('Data Submitted Successfully');
-        // Clear the existing reports
-        setAllReport([]);
-        // Optionally re-fetch the reports after clearing
-        // fetchReport();
-    }).catch(err => {
-        console.log(err);
-    });
-};
-
+    };
 
     const handleValue = (element) => {
         setData({
@@ -142,6 +144,12 @@ const Home = () => {
         }
     };
 
+    const handleLogout = () => {
+       // localStorage.removeItem('userToken'); 
+        alert('You have been logged out');
+        window.location.href = '/'; 
+    };
+
     const createPDF = (data) => {
         if (!data || !data.eventName) {
             console.error('Invalid data provided to createPDF');
@@ -183,8 +191,7 @@ const Home = () => {
     
         // Save the PDF
         doc.save(`${data.eventName}_report.pdf`);
-    };    
-        
+    };
 
     const handleCreateReport = () => {
         if (!selectedData) {
@@ -194,6 +201,16 @@ const Home = () => {
         setLoading(true); 
         createPDF(selectedData);
         setLoading(false); 
+    };
+
+    const handleToggleFetch = () => {
+        if (isFetched) {
+            setAllReport([]);  // Clear the fetched data
+            setShowData(false);  // Hide the data
+            setIsFetched(false);  // Reset fetch status
+        } else {
+            fetchReport();  // Fetch the data
+        }
     };
 
     return (
@@ -214,7 +231,15 @@ const Home = () => {
                         padding: 8px;
                     }
                 `}
-            </style>
+            </style>d
+            <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+                <button 
+                    style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', fontSize: '17px', padding: '10px 20px', borderRadius: '5px' }} 
+                    onClick={handleLogout}
+                >
+                    Logout
+                </button>
+            </div>
 
             <div style={{ padding: '30px', display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center', transition: 'all 0.3s ease' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 300px', marginRight: '10px' }}>
@@ -284,10 +309,10 @@ const Home = () => {
                     Submit
                 </button>
                 <button 
-                    style={{ backgroundColor: '#007bff', color: 'white', border: 'none',fontSize : '17px', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
-                    onClick={fetchReport}
+                    style={{ backgroundColor: isFetched ? '#dc3545' : '#007bff', color: 'white', border: 'none',fontSize : '17px', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
+                    onClick={handleToggleFetch}
                 >
-                    Fetch
+                    {isFetched ? 'Unfetch' : 'Fetch'}
                 </button>
                 <button 
                     style={{ backgroundColor: '#fd7e14', color: 'white', border: 'none',fontSize : '17px', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
@@ -295,12 +320,6 @@ const Home = () => {
                 >
                     Update
                 </button>
-                {/* <button 
-                    style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
-                    onClick={() => handleDelete(data.id)}
-                >
-                    Delete
-                </button> */}
                 <button 
                     style={{ backgroundColor: '#17a2b8', color: 'white', border: 'none',fontSize : '17px', padding: '10px 20px', borderRadius: '5px', margin: '0 10px', transition: 'all 0.3s ease' }} 
                     onClick={handleCreateReport}
